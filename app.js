@@ -24,9 +24,8 @@ const GameController = (() => {
     },
     checkResult: (board, sign) => {
       let combination = []
-      board.map((element, i) => {
+      board.forEach((element, i) => {
         element === sign ? combination = [...combination, i] : null
-        return combination
       })
 
       let result;
@@ -58,7 +57,7 @@ const PlayerController = (() => {
     setPlayer2: (name, sign) => {
       player2 = Player(name, sign)
     },
-    setTurn: () => {
+    changePlayer: () => {
       player === player1 ? player = player2 : player = player1
     },
     getSign: () => player.getSign(),
@@ -73,28 +72,33 @@ const UIController = (() => {
     declare: ".declare",
     reset: ".reset",
     modal: ".modal",
-    form: ".form",
-    turn: ".turn"
+    form: ".form-player-names",
+    formAI: ".form-ai",
+    turn: ".turn",
+    back: ".back"
   }
 
   return {
     getSelectors: () => selectors,
-    showResult: (name) => {
+    showWinner: (name) => {
       document.querySelector(selectors.gameover).style.display = "flex"
       document.querySelector(selectors.declare).textContent = `"${name}" wins!`
       document.querySelector(selectors.turn).textContent = `Game Over!`
     },
-    tieResult: () => {
+    showTie: () => {
       document.querySelector(selectors.gameover).style.display = "flex"
       document.querySelector(selectors.declare).textContent = `Tie!`
       document.querySelector(selectors.turn).textContent = `Game Over!`
     },
     closeResult: () => document.querySelector(selectors.gameover).style.display = "none",
+    showTurn: (name) => document.querySelector(selectors.turn).textContent = `${name}'s turn`,
     openModal: () => document.querySelector(selectors.modal).style.display = "flex",
     closeModal: () => document.querySelector(selectors.modal).style.display = "none",
-    showTurn: (name) => document.querySelector(selectors.turn).textContent = `${name}'s turn`,
-    clearForm: () => Array.from(document.querySelector(selectors.form)).forEach(el => el.value = "")
-
+    openForm: () => document.querySelector(selectors.form).style.display = "flex",
+    clearForm: () => Array.from(document.querySelector(selectors.form)).forEach(el => el.value = ""),
+    closeForm: () => document.querySelector(selectors.form).style.display = "none",
+    openFormAI: () => document.querySelector(selectors.formAI).style.display = "flex",
+    closeFormAI: () => document.querySelector(selectors.formAI).style.display = "none"
   }
 })()
 
@@ -102,6 +106,7 @@ const App = ((game, ui, player) => {
   const selectors = ui.getSelectors()
   const cells = Array.from(document.querySelectorAll(selectors.cells))
   const form = document.querySelector(selectors.form)
+  const formAI = document.querySelector(selectors.formAI)
 
   const loadBoard = (board) => {
     cells.forEach((cell, i) => {
@@ -115,11 +120,30 @@ const App = ((game, ui, player) => {
     })
   }
 
-  const checkMatch = (board, sign) => {
-    const { result, combination } = game.checkResult(board, sign)
-    if (result) ui.showResult(player.getName())
-    if (!result && combination.length === 5) ui.tieResult()
-    return {result, combination}
+  const showResults = (result, combination) => {
+    if (result) ui.showWinner(player.getName())
+    player.changePlayer()
+    if (!result) ui.showTurn(player.getName())
+    if (!result && combination.length === 5) ui.showTie()
+  }
+
+  const emptyIndexes = (board) => {
+    return board.reduce((prev, cur, i) => cur === null ? prev.concat(i) : prev, [])
+  }
+
+  const aiMove = (board) => {
+    const sign = player.getSign()
+    const availableIndexes = emptyIndexes(board)
+    const randomIndex = availableIndexes[Math.floor(Math.random() * availableIndexes.length)]
+    availableIndexes.length !== 0 ? game.setBoard(randomIndex, sign) : null
+    const newBoard = game.getBoard()
+    loadBoard(newBoard)
+    const { result, combination } = game.checkResult(newBoard, sign)
+    cells.forEach(cell => {
+      cell.innerHTML !== "" ? cell.removeEventListener("click", markSelection) : null
+    });
+    showResults(result, combination)
+    if (result) return
   }
 
   const markSelection = (e) => {
@@ -128,13 +152,12 @@ const App = ((game, ui, player) => {
     game.setBoard(cellNumber, sign)
     const newBoard = game.getBoard()
     loadBoard(newBoard)
-    const {result, combination} = checkMatch(newBoard, sign)
-    player.setTurn()
-    if (!result) {
-      ui.showTurn(player.getName())
-      if (combination.length === 5) {
-        ui.tieResult()
-      }
+    const { result, combination } = game.checkResult(newBoard, sign)
+    showResults(result, combination)
+    if (result) return
+
+    if (player.getName() === "Computer") {
+      aiMove(newBoard)
     }
   }
 
@@ -146,8 +169,10 @@ const App = ((game, ui, player) => {
       cell.addEventListener("click", markSelection, { once: true })
     })
     ui.closeResult()
-    ui.openModal()
     ui.clearForm()
+    ui.closeForm()
+    ui.openModal()
+    ui.openFormAI()
   }
 
   const setGame = (e) => {
@@ -161,12 +186,37 @@ const App = ((game, ui, player) => {
     ui.closeModal()
   }
 
+  const backToSetPlayers = (e) => {
+    e.preventDefault()
+    ui.closeForm()
+    ui.openFormAI()
+  }
+
+  const setAIGame = (e) => {
+    e.preventDefault()
+    formAI.elements.opponent.forEach(item => {
+      if (item.id === "ai" && item.checked) {
+        player.setPlayer1("Player", "X")
+        player.setPlayer2("Computer", "O")
+        player.setPlayer()
+        ui.showTurn(player.getName())
+        ui.closeModal()
+      }
+      else if (item.id === "players" && item.checked) {
+        ui.openForm()
+        ui.closeFormAI()
+      }
+    })
+  }
+
   const loadEventListeners = () => {
     cells.forEach(cell => {
       cell.addEventListener("click", markSelection, { once: true })
     })
     document.querySelector(selectors.reset).addEventListener("click", resetGame)
+    document.querySelector(selectors.back).addEventListener("click", backToSetPlayers)
     form.addEventListener("submit", setGame)
+    formAI.addEventListener("submit", setAIGame)
   }
 
   return {

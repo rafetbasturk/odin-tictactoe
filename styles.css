@@ -145,7 +145,7 @@ button {
   z-index: 5;
 }
 
-.form-container {
+.forms {
   background: coral;
   display: flex;
   flex-direction: column;
@@ -158,12 +158,44 @@ button {
   padding: 1.6rem;
 }
 
-.form {
+h3 {
+  font-size: 3rem;
+}
+
+.form-ai {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 1.6rem;
+  height: 120px;
+}
+
+.ai, .ai div, label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+label {
+  width: 60px;
+}
+
+input:hover, label:hover {
+  cursor: pointer;
+}
+
+.ai{
+  gap: 1.6rem
+}
+
+.form-player-names {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   gap: 1rem;
+  height: 120px;
 }
 
 input {
