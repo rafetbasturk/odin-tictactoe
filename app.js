@@ -51,10 +51,10 @@ const PlayerController = (() => {
     setPlayer: () => {
       player = player1
     },
-    setPlayer1: (name, sign) => {
+    setPlayer1: (name = "player1", sign = "X") => {
       player1 = Player(name, sign)
     },
-    setPlayer2: (name, sign) => {
+    setPlayer2: (name = "player2", sign = "O") => {
       player2 = Player(name, sign)
     },
     changePlayer: () => {
@@ -175,12 +175,12 @@ const App = ((game, ui, player) => {
     ui.openFormAI()
   }
 
-  const setGame = (e) => {
+  const setTwoPlayerGame = (e) => {
     e.preventDefault()
     const name1 = form.elements["player1"].value
     const name2 = form.elements["player2"].value
-    player.setPlayer1(name1, "X")
-    player.setPlayer2(name2, "O")
+    name1 === "" ? player.setPlayer1() : player.setPlayer1(name1, "X")
+    name2 === "" ? player.setPlayer2() : player.setPlayer2(name2, "O")
     player.setPlayer()
     ui.showTurn(player.getName())
     ui.closeModal()
@@ -215,7 +215,7 @@ const App = ((game, ui, player) => {
     })
     document.querySelector(selectors.reset).addEventListener("click", resetGame)
     document.querySelector(selectors.back).addEventListener("click", backToSetPlayers)
-    form.addEventListener("submit", setGame)
+    form.addEventListener("submit", setTwoPlayerGame)
     formAI.addEventListener("submit", setAIGame)
   }
 
